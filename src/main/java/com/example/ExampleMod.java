@@ -1,30 +1,87 @@
 package com.example;
 
-import net.fabricmc.api.ModInitializer;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
+import net.minecraft.text.Text;
+import org.lwjgl.glfw.GLFW;
 
-import net.minecraft.resources.Identifier;
+public class ExampleMod implements ClientModInitializer {
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+    private static KeyBinding toggleKey;
+    private boolean active = false;
+    private long startTick = 0;
+    
+    private static final long PHASE_1_TICKS = 1800; // 1.5 dakika (90s * 20 tick)
+    private static final long PHASE_2_TICKS = 1840; // 1 dakika 32 saniye (92s * 20 tick)
+    private static final long TOTAL_ROUND_TICKS = PHASE_1_TICKS + PHASE_2_TICKS; // 3640 tick
 
-public class ExampleMod implements ModInitializer {
-	public static final String MOD_ID = "modid";
+    @Override
+    public void onInitializeClient() {
+        toggleKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "Makroyu Başlat/Durdur",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_KP_9,
+                "Makro Modu"
+        ));
 
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
-	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player == null) return;
 
-	@Override
-	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
+            while (toggleKey.wasPressed()) {
+                active = !active;
+                startTick = 0;
+                
+                if (!active) {
+                    resetKeys(client);
+                    client.player.sendMessage(Text.literal("§c[Makro] Durduruldu."), false);
+                } else {
+                    client.player.sendMessage(Text.literal("§a[Makro] Başlatıldı!"), false);
+                }
+            }
 
-		LOGGER.info("Hello Fabric world!");
-	}
+            if (active) {
+                runMacroLogic(client);
+            }
+        });
+    }
 
-	public static Identifier id(String path) {
-		return Identifier.fromNamespaceAndPath(MOD_ID, path);
-	}
+    private void runMacroLogic(MinecraftClient client) {
+        startTick++;
+
+        long currentRoundTick = (startTick - 1) % TOTAL_ROUND_TICKS;
+        long completedRounds = (startTick - 1) / TOTAL_ROUND_TICKS;
+
+        if (completedRounds >= 3) {
+            resetKeys(client);
+            if (client.player != null) {
+                client.player.networkHandler.sendChatMessage("/warp garden");
+                client.player.sendMessage(Text.literal("§b[Makro] 3 tur tamamlandı, /warp garden gönderildi."), false);
+            }
+            active = false;
+            return;
+        }
+
+        if (currentRoundTick < PHASE_1_TICKS) {
+            client.options.keyLeft.setPressed(true);      // A tuşu
+            client.options.keyAttack.setPressed(true);    // Sol tık
+            client.options.keyRight.setPressed(false);    // D bırak
+            client.options.keyBack.setPressed(false);     // S bırak
+        } else {
+            client.options.keyLeft.setPressed(false);     // A bırak
+            client.options.keyAttack.setPressed(true);    // Sol tık
+            client.options.keyRight.setPressed(true);     // D tuşu
+            client.options.keyBack.setPressed(true);      // S tuşu
+        }
+    }
+
+    private void resetKeys(MinecraftClient client) {
+        client.options.keyLeft.setPressed(false);
+        client.options.keyRight.setPressed(false);
+        client.options.keyBack.setPressed(false);
+        client.options.keyAttack.setPressed(false);
+    }
 }
