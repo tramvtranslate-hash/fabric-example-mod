@@ -14,9 +14,9 @@ public class ExampleMod implements ClientModInitializer {
     private static KeyBinding toggleKey;
     private boolean active = false;
     private long startTick = 0;
-    
-    private static final long PHASE_1_TICKS = 1800; // 1.5 dakika (90s * 20 tick)
-    private static final long PHASE_2_TICKS = 1840; // 1 dakika 32 saniye (92s * 20 tick)
+
+    private static final long PHASE_1_TICKS = 1800; // 1.5 dk (90s * 20 tick)
+    private static final long PHASE_2_TICKS = 1840; // 1 dk 32s (92s * 20 tick)
     private static final long TOTAL_ROUND_TICKS = PHASE_1_TICKS + PHASE_2_TICKS; // 3640 tick
 
     @Override
@@ -34,7 +34,7 @@ public class ExampleMod implements ClientModInitializer {
             while (toggleKey.wasPressed()) {
                 active = !active;
                 startTick = 0;
-                
+
                 if (!active) {
                     resetKeys(client);
                     client.player.sendMessage(Text.literal("§c[Makro] Durduruldu."), false);
@@ -66,22 +66,22 @@ public class ExampleMod implements ClientModInitializer {
         }
 
         if (currentRoundTick < PHASE_1_TICKS) {
-            client.options.keyLeft.setPressed(true);      // A tuşu
-            client.options.keyAttack.setPressed(true);    // Sol tık
-            client.options.keyRight.setPressed(false);    // D bırak
-            client.options.keyBack.setPressed(false);     // S bırak
+            client.options.leftKey.setPressed(true);       // A tuşu
+            client.options.attackKey.setPressed(true);     // Sol tık
+            client.options.rightKey.setPressed(false);     // D tuşu serbest
+            client.options.backKey.setPressed(false);      // S tuşu serbest
         } else {
-            client.options.keyLeft.setPressed(false);     // A bırak
-            client.options.keyAttack.setPressed(true);    // Sol tık
-            client.options.keyRight.setPressed(true);     // D tuşu
-            client.options.keyBack.setPressed(true);      // S tuşu
+            client.options.leftKey.setPressed(false);      // A tuşu serbest
+            client.options.attackKey.setPressed(true);     // Sol tık devam
+            client.options.rightKey.setPressed(true);      // D tuşu
+            client.options.backKey.setPressed(true);       // S tuşu
         }
     }
 
     private void resetKeys(MinecraftClient client) {
-        client.options.keyLeft.setPressed(false);
-        client.options.keyRight.setPressed(false);
-        client.options.keyBack.setPressed(false);
-        client.options.keyAttack.setPressed(false);
+        client.options.leftKey.setPressed(false);
+        client.options.rightKey.setPressed(false);
+        client.options.backKey.setPressed(false);
+        client.options.attackKey.setPressed(false);
     }
 }
