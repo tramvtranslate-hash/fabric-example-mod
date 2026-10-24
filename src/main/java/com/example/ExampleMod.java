@@ -3,7 +3,6 @@ package com.example;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
@@ -49,7 +48,7 @@ public class ExampleMod implements ClientModInitializer {
         });
     }
 
-    private void runMacroLogic(MinecraftClient client) {
+    private void runMacroLogic(net.minecraft.client.MinecraftClient client) {
         startTick++;
 
         long currentRoundTick = (startTick - 1) % TOTAL_ROUND_TICKS;
@@ -66,22 +65,22 @@ public class ExampleMod implements ClientModInitializer {
         }
 
         if (currentRoundTick < PHASE_1_TICKS) {
-            client.options.leftKey.setPressed(true);       // A tuşu
-            client.options.attackKey.setPressed(true);     // Sol tık
-            client.options.rightKey.setPressed(false);     // D tuşu serbest
-            client.options.backKey.setPressed(false);      // S tuşu serbest
+            client.options.keyLeft.setPressed(true);       // A tuşu
+            client.options.keyAttack.setPressed(true);     // Sol tık
+            client.options.keyRight.setPressed(false);     // D serbest
+            client.options.keyBack.setPressed(false);      // S serbest
         } else {
-            client.options.leftKey.setPressed(false);      // A tuşu serbest
-            client.options.attackKey.setPressed(true);     // Sol tık devam
-            client.options.rightKey.setPressed(true);      // D tuşu
-            client.options.backKey.setPressed(true);       // S tuşu
+            client.options.keyLeft.setPressed(false);      // A serbest
+            client.options.keyAttack.setPressed(true);     // Sol tık
+            client.options.keyRight.setPressed(true);      // D tuşu
+            client.options.keyBack.setPressed(true);       // S tuşu
         }
     }
 
-    private void resetKeys(MinecraftClient client) {
-        client.options.leftKey.setPressed(false);
-        client.options.rightKey.setPressed(false);
-        client.options.backKey.setPressed(false);
-        client.options.attackKey.setPressed(false);
+    private void resetKeys(net.minecraft.client.MinecraftClient client) {
+        client.options.keyLeft.setPressed(false);
+        client.options.keyRight.setPressed(false);
+        client.options.keyBack.setPressed(false);
+        client.options.keyAttack.setPressed(false);
     }
 }
