@@ -17,21 +17,19 @@ import org.lwjgl.glfw.GLFW;
 public class ExampleMod implements ClientModInitializer {
 
     private static final String MOD_ID = "macro_mod";
+    private static final int ROUNDS_PER_WARP = 3;
 
     private static KeyMapping toggleKey;
     private static KeyMapping menuKey;
     private static KeyMapping stopKey;
 
     private static boolean active = false;
-
     private static int phaseASeconds = 94;
     private static int phaseBSeconds = 94;
 
     private static int phase = 0;
     private static int rounds = 0;
     private static long phaseStartedAt = 0L;
-
-    private static final int ROUNDS_PER_WARP = 3;
 
     @Override
     public void onInitializeClient() {
@@ -72,7 +70,7 @@ public class ExampleMod implements ClientModInitializer {
             }
 
             while (menuKey.consumeClick()) {
-                client.screen = new MacroScreen();
+                client.gui.setScreen(new MacroScreen());
             }
 
             while (toggleKey.consumeClick()) {
@@ -94,12 +92,12 @@ public class ExampleMod implements ClientModInitializer {
             return;
         }
 
+        releaseKeys(client);
         active = true;
         phase = 0;
         rounds = 0;
         phaseStartedAt = System.nanoTime();
 
-        releaseKeys(client);
         client.player.sendSystemMessage(
             Component.literal("[Makro] Baslatildi.")
         );
@@ -123,11 +121,10 @@ public class ExampleMod implements ClientModInitializer {
         }
 
         long now = System.nanoTime();
-        long durationNanos = (long) getPhaseSeconds() * 1_000_000_000L;
+        long duration = (long) getPhaseSeconds() * 1_000_000_000L;
 
-        if (now - phaseStartedAt >= durationNanos) {
+        if (now - phaseStartedAt >= duration) {
             releaseKeys(client);
-
             phaseStartedAt = now;
 
             if (phase == 0) {
@@ -179,55 +176,67 @@ public class ExampleMod implements ClientModInitializer {
             int y = this.height / 2 - 65;
 
             this.addRenderableWidget(
-                Button.builder(Component.literal("A Asamasi -  " + phaseASeconds + " sn"),
+                Button.builder(
+                    Component.literal("A Asamasi: " + phaseASeconds + " sn"),
                     button -> {
-                        phaseASeconds = phaseASeconds <= 5
-                            ? 5 : phaseASeconds - 5;
+                        phaseASeconds = Math.max(5, phaseASeconds - 5);
                         refresh();
-                    }).bounds(center - 100, y, 200, 20).build()
+                    }
+                ).bounds(center - 110, y, 220, 20).build()
             );
 
             this.addRenderableWidget(
-                Button.builder(Component.literal("D + S Asamasi -  " + phaseBSeconds + " sn"),
+                Button.builder(
+                    Component.literal("D + S Asamasi: " + phaseBSeconds + " sn"),
                     button -> {
-                        phaseBSeconds = phaseBSeconds <= 5
-                            ? 5 : phaseBSeconds - 5;
+                        phaseBSeconds = Math.max(5, phaseBSeconds - 5);
                         refresh();
-                    }).bounds(center - 100, y + 25, 200, 20).build()
+                    }
+                ).bounds(center - 110, y + 25, 220, 20).build()
             );
 
             this.addRenderableWidget(
-                Button.builder(Component.literal("A asamasini +5 sn"),
+                Button.builder(
+                    Component.literal("A Asamasina +5 sn"),
                     button -> {
                         phaseASeconds = Math.min(3600, phaseASeconds + 5);
                         refresh();
-                    }).bounds(center - 100, y + 50, 200, 20).build()
+                    }
+                ).bounds(center - 110, y + 50, 220, 20).build()
             );
 
             this.addRenderableWidget(
-                Button.builder(Component.literal("D + S asamasini +5 sn"),
+                Button.builder(
+                    Component.literal("D + S Asamasina +5 sn"),
                     button -> {
                         phaseBSeconds = Math.min(3600, phaseBSeconds + 5);
                         refresh();
-                    }).bounds(center - 100, y + 75, 200, 20).build()
+                    }
+                ).bounds(center - 110, y + 75, 220, 20).build()
             );
 
             this.addRenderableWidget(
-                Button.builder(Component.literal(active ? "M akroyu Durdur" : "Makroyu Baslat"),
+                Button.builder(
+                    Component.literal(active ? "Makroyu Durdur" : "Makroyu Baslat"),
                     button -> {
+                        Minecraft client = Minecraft.getInstance();
+
                         if (active) {
-                            stopMacro(this.minecraft);
+                            stopMacro(client);
                         } else {
-                            startMacro(this.minecraft);
+                            startMacro(client);
                         }
+
                         refresh();
-                    }).bounds(center - 100, y + 105, 200, 20).build()
+                    }
+                ).bounds(center - 110, y + 105, 220, 20).build()
             );
 
             this.addRenderableWidget(
-                Button.builder(Component.literal("Kapat"),
-                    button -> this.minecraft.screen = null
-                    .bounds(center - 100, y + 130, 200, 20).build()
+                Button.builder(
+                    Component.literal("Kapat"),
+                    button -> Minecraft.getInstance().gui.setScreen(null)
+                ).bounds(center - 110, y + 130, 220, 20).build()
             );
         }
 
@@ -248,7 +257,7 @@ public class ExampleMod implements ClientModInitializer {
             graphics.text(
                 this.font,
                 "Makro: " + (active ? "AKTIF" : "KAPALI"),
-                this.width / 2 - 35,
+                this.width / 2 - 45,
                 this.height / 2 - 90,
                 0xFFFFFFFF,
                 true
@@ -257,7 +266,7 @@ public class ExampleMod implements ClientModInitializer {
             graphics.text(
                 this.font,
                 "Tur: " + (rounds + 1) + "/" + ROUNDS_PER_WARP,
-                this.width / 2 - 35,
+                this.width / 2 - 30,
                 this.height / 2 + 90,
                 0xFFFFFFFF,
                 true
@@ -265,8 +274,8 @@ public class ExampleMod implements ClientModInitializer {
 
             graphics.text(
                 this.font,
-                "F8: Acil durdur | Numpad 9: Baslat/Durdur",
-                this.width / 2 - 105,
+                "F8: Acil durdur | F7: Menu | Numpad 9: Ac/Kapat",
+                this.width / 2 - 145,
                 this.height / 2 + 105,
                 0xFFFFCC55,
                 true
