@@ -126,9 +126,11 @@ public final class ExampleMod implements ClientModInitializer {
                 // The normal game attack loop is suspended while a Screen is open.
                 // Keep the attack loop alive for the macro while F7 is displayed.
                 // Note: this needs in-game testing because GUI clicks and mining can overlap.
-                if (client.screen instanceof MacroScreen && client.player != null
-                    && client.level != null && recoveryState == RecoveryState.NONE) {
-                    client.gameMode.continueAttack(false);
+                if (client.gui.screen() instanceof MacroScreen
+                      && client.player != null
+                    && client.level != null
+                    && recoveryState == RecoveryState.NONE) {
+                    client.options.keyAttack.setDown(true);
                 }
             }
         });
