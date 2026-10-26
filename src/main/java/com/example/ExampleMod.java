@@ -1,86 +1,93 @@
+
 package com.example;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 public class ExampleMod implements ClientModInitializer {
 
-    private static KeyBinding toggleKey;
+    private static KeyMapping toggleKey;
     private boolean active = false;
-    private long startTick = 0;
+    private long tick = 0;
 
-    private static final long PHASE_1_TICKS = 1800; // 1.5 dk (90s * 20 tick)
-    private static final long PHASE_2_TICKS = 1840; // 1 dk 32s (92s * 20 tick)
-    private static final long TOTAL_ROUND_TICKS = PHASE_1_TICKS + PHASE_2_TICKS; // 3640 tick
+    private static final long PHASE_TICKS = 92L * 20L;
+    private static final long ROUND_TICKS = PHASE_TICKS * 2L;
+    private static final long TOTAL_TICKS = ROUND_TICKS * 3L;
 
     @Override
     public void onInitializeClient() {
-        toggleKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "Makroyu Başlat/Durdur",
-                InputUtil.Type.KEYSYM,
+        KeyMapping.Category category = KeyMapping.Category.register(
+            Identifier.fromNamespaceAndPath("examplemod", "macro")
+        );
+
+        toggleKey = KeyMappingHelper.registerKeyMapping(
+            new KeyMapping(
+                "key.examplemod.toggle",
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_KP_9,
-                "Makro Modu"
-        ));
+                category
+            )
+        );
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null) return;
-
-            while (toggleKey.wasPressed()) {
+            while (toggleKey.consumeClick()) {
                 active = !active;
-                startTick = 0;
+                tick = 0;
+                resetKeys(client);
 
-                if (!active) {
-                    resetKeys(client);
-                    client.player.sendMessage(Text.literal("§c[Makro] Durduruldu."), false);
-                } else {
-                    client.player.sendMessage(Text.literal("§a[Makro] Başlatıldı!"), false);
+                if (client.player != null) {
+                    client.player.sendSystemMessage(Component.literal(
+                        active ? "[Makro] Başlatıldı!" : "[Makro] Durduruldu."
+                    ));
                 }
             }
 
-            if (active) {
-                runMacroLogic(client);
+            if (active && client.player != null) {
+                runMacro(client);
             }
         });
     }
 
-    private void runMacroLogic(net.minecraft.client.MinecraftClient client) {
-        startTick++;
+    private void runMacro(Minecraft client) {
+        long current = tick % ROUND_TICKS;
+        long completedRounds = tick / ROUND_TICKS;
 
-        long currentRoundTick = (startTick - 1) % TOTAL_ROUND_TICKS;
-        long completedRounds = (startTick - 1) / TOTAL_ROUND_TICKS;
-
-        if (completedRounds >= 3) {
+        if (tick >= TOTAL_TICKS) {
             resetKeys(client);
-            if (client.player != null) {
-                client.player.networkHandler.sendChatMessage("/warp garden");
-                client.player.sendMessage(Text.literal("§b[Makro] 3 tur tamamlandı, /warp garden gönderildi."), false);
-            }
+            client.player.connection.sendChat("/warp garden");
+            client.player.sendSystemMessage(
+                Component.literal("[Makro] 3 tur tamamlandı.")
+            );
             active = false;
             return;
         }
 
-        if (currentRoundTick < PHASE_1_TICKS) {
-            client.options.keyLeft.setPressed(true);       // A tuşu
-            client.options.keyAttack.setPressed(true);     // Sol tık
-            client.options.keyRight.setPressed(false);     // D serbest
-            client.options.keyBack.setPressed(false);      // S serbest
+        client.options.keyAttack.setDown(true);
+
+        if (current < PHASE_TICKS) {
+            client.options.keyLeft.setDown(true);
+            client.options.keyRight.setDown(false);
+            client.options.keyBack.setDown(false);
         } else {
-            client.options.keyLeft.setPressed(false);      // A serbest
-            client.options.keyAttack.setPressed(true);     // Sol tık
-            client.options.keyRight.setPressed(true);      // D tuşu
-            client.options.keyBack.setPressed(true);       // S tuşu
+            client.options.keyLeft.setDown(false);
+            client.options.keyRight.setDown(true);
+            client.options.keyBack.setDown(true);
         }
+
+        tick++;
     }
 
-    private void resetKeys(net.minecraft.client.MinecraftClient client) {
-        client.options.keyLeft.setPressed(false);
-        client.options.keyRight.setPressed(false);
-        client.options.keyBack.setPressed(false);
-        client.options.keyAttack.setPressed(false);
+    private void resetKeys(Minecraft client) {
+        client.options.keyLeft.setDown(false);
+        client.options.keyRight.setDown(false);
+        client.options.keyBack.setDown(false);
+        client.options.keyAttack.setDown(false);
     }
 }
