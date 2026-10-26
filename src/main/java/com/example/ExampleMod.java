@@ -72,7 +72,7 @@ public class ExampleMod implements ClientModInitializer {
             }
 
             while (menuKey.consumeClick()) {
-                client.setScreen(new MacroScreen());
+                client.screen = new MacroScreen();
             }
 
             while (toggleKey.consumeClick()) {
@@ -226,7 +226,7 @@ public class ExampleMod implements ClientModInitializer {
 
             this.addRenderableWidget(
                 Button.builder(Component.literal("Kapat"),
-                    button -> this.minecraft.setScreen(null))
+                    button -> this.minecraft.screen = null
                     .bounds(center - 100, y + 130, 200, 20).build()
             );
         }
