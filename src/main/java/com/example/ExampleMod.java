@@ -17,6 +17,7 @@ public class ExampleMod implements ClientModInitializer {
     private boolean active = false;
     private long tick = 0;
 
+    // Her aşama 92 saniye
     private static final long PHASE_TICKS = 92L * 20L;
     private static final long ROUND_TICKS = PHASE_TICKS * 2L;
     private static final long TOTAL_TICKS = ROUND_TICKS * 3L;
@@ -44,7 +45,9 @@ public class ExampleMod implements ClientModInitializer {
 
                 if (client.player != null) {
                     client.player.sendSystemMessage(Component.literal(
-                        active ? "[Makro] Başlatıldı!" : "[Makro] Durduruldu."
+                        active
+                            ? "[Makro] Başlatıldı!"
+                            : "[Makro] Durduruldu."
                     ));
                 }
             }
@@ -56,29 +59,33 @@ public class ExampleMod implements ClientModInitializer {
     }
 
     private void runMacro(Minecraft client) {
-        long current = tick % ROUND_TICKS;
-        long completedRounds = tick / ROUND_TICKS;
-
         if (tick >= TOTAL_TICKS) {
             resetKeys(client);
             client.player.connection.sendChat("/warp garden");
             client.player.sendSystemMessage(
-                Component.literal("[Makro] 3 tur tamamlandı.")
+                Component.literal(
+                    "[Makro] 3 tur tamamlandı, /warp garden gönderildi."
+                )
             );
             active = false;
             return;
         }
 
+        long current = tick % ROUND_TICKS;
+
+        // Sol tık iki aşamada da basılı
         client.options.keyAttack.setDown(true);
 
         if (current < PHASE_TICKS) {
+            // 92 saniye: Sol tık + A
             client.options.keyLeft.setDown(true);
             client.options.keyRight.setDown(false);
-            client.options.keyBack.setDown(false);
+            client.options.keyDown.setDown(false);
         } else {
+            // 92 saniye: Sol tık + D + S
             client.options.keyLeft.setDown(false);
             client.options.keyRight.setDown(true);
-            client.options.keyBack.setDown(true);
+            client.options.keyDown.setDown(true);
         }
 
         tick++;
@@ -87,7 +94,7 @@ public class ExampleMod implements ClientModInitializer {
     private void resetKeys(Minecraft client) {
         client.options.keyLeft.setDown(false);
         client.options.keyRight.setDown(false);
-        client.options.keyBack.setDown(false);
+        client.options.keyDown.setDown(false);
         client.options.keyAttack.setDown(false);
     }
 }
